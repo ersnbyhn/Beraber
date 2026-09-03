@@ -284,9 +284,36 @@
       font-size: 12px !important;
       margin-left: 5px;
     }
+
+    /* --- ÖZEL BİLDİRİM (TOAST) STİLİ --- */
+    #toast-message {
+      position: fixed;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #27ae60;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      z-index: 9999;
+      transition: top 0.4s ease, opacity 0.4s ease;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #toast-message.toast-visible {
+      top: 20px;
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
+
+  <!-- ÖZEL BİLDİRİM KUTUSU (TARAYICI ALERT YERİNE) -->
+  <div id="toast-message">Hesaplama Tamamlandı!</div>
 
   <!-- 1. SAYFA: 12 AY SEÇİM EKRANI -->
   <div id="monthsView" class="container">
@@ -494,13 +521,11 @@
 
       let standardWorkHours = daysInMonth === 31 ? 232.5 : (daysInMonth === 30 ? 225 : daysInMonth * 7.5);
       
-      // Mesai saati otomasyondaki s4 (Mesai Saati) kutusuna aktarılıyor
       const s4Input = document.getElementById("s4");
       if (s4Input) {
         s4Input.value = total;
       }
 
-      // Standart çalışma saati otomasyondaki s2 kutusuna aktarılıyor
       const s2Input = document.getElementById("s2");
       if (s2Input) {
         s2Input.value = standardWorkHours;
@@ -514,12 +539,20 @@
       if (!el) return 0;
       let val = el.value;
       if (val === "") return 0;
-      val = val.replace(/\./g, "").replace(",", ".");
+      val = val.toString().replace(/\./g, "").replace(",", ".");
       return isNaN(parseFloat(val)) ? 0 : parseFloat(val);
     }
 
     function formatTRY(val) {
       return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+    }
+
+    function showToast() {
+      const toast = document.getElementById("toast-message");
+      toast.classList.add("toast-visible");
+      setTimeout(() => {
+        toast.classList.remove("toast-visible");
+      }, 2200);
     }
 
     function OtomatikHesapla() {
@@ -581,7 +614,9 @@
         let B43 = B42 + B14;
         document.getElementById("res6").innerHTML = formatTRY(B42);
         document.getElementById("resToplam").innerHTML = formatTRY(B43);
-        alert("Hesaplama Tamamlandı!");
+        
+        // Alert yerine özel bildirim fonksiyonu çağrıldı
+        showToast();
       } catch (e) { console.error(e); }
     }
 
