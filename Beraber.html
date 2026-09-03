@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ErsNByhN® 2026</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif; 
+            margin: 0; 
+            padding: 10px; 
+            background-color: #f0f2f5; 
+            color: #000;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* MAAŞ HESAPLAMA PANELİ STİLLERİ */
+        .container-maas { 
+            background: #ffffff; 
+            padding: 12px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            width: 100%; 
+            margin-top: 15px; 
+            border-top: 5px solid #0057b8; 
+        }
+        .maas-baslik { 
+            color: #0057b8; 
+            text-align: center; 
+            font-size: 14px; 
+            margin: 2px 0 8px 0; 
+            text-transform: uppercase; 
+            border-bottom: 1px solid #eee; 
+            padding-bottom: 5px; 
+            font-weight: bold;
+        }
+        .maas-tbl { width: 100%; border-collapse: collapse; }
+        .maas-tbl td { padding: 3px; vertical-align: middle; border: none !important; }
+        .lbl { font-weight: bold; font-size: 11px; width: 55%; color: #2c3e50; text-align: left; }
+        .input-cell { width: 45%; }
+        .maas-tbl input, .maas-tbl select { 
+            width: 100%; 
+            padding: 4px; 
+            font-size: 16px; 
+            border: 1px solid #bdc3c7; 
+            border-radius: 4px; 
+            text-align: right; 
+            font-weight: bold; 
+            height: 35px; 
+            box-sizing: border-box; 
+        }
+        .readonly-input { background-color: #f1f2f6; color: #d35400; border-color: #bdc3c7; }
+        .editable-param { background-color: #fff9e6; color: #27ae60; border: 1px solid #27ae60; }
+        .btn-maas { 
+            width: 100%; 
+            padding: 10px; 
+            margin-top: 8px; 
+            background-color: #0057b8; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 13px; 
+            font-weight: bold; 
+        }
+        .result-panel { 
+            margin-top: 8px; 
+            padding: 8px; 
+            background-color: #fff9f4; 
+            border: 1px dashed #d35400; 
+            border-radius: 6px; 
+        }
+        .result-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: bold; color: #2c3e50; margin: 3px 0; }
+        .result-val { color: #d35400; }
+        .gz-label-area { display: flex; align-items: center; justify-content: space-between; padding-right: 5px; }
+        .gz-small-box { width: 65px !important; height: 25px !important; font-size: 12px !important; margin-left: 5px; }
+        hr.maas-hr { margin: 6px 0; border: 0; border-top: 1px solid #eee; }
+
+        /* GENEL SAYFA STİLLERİ */
+        .sayfa { display: none; width: 100%; }
+        .aktif { display: block; }
+        .islem-btn { 
+            background-color: #ffffff; 
+            border: 2px solid #000; 
+            padding: 8px; 
+            font-size: 14px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            color: #000; 
+            border-radius: 6px;
+            margin: 2px;
+        }
+    </style>
+
+    <script>
+        // MAAŞ HESAPLAMA MANTIĞI
+        function G(id) {
+            let val = document.getElementById(id).value;
+            if (val === "") return 0;
+            val = val.replace(/\./g, "").replace(",", ".");
+            return isNaN(parseFloat(val)) ? 0 : parseFloat(val);
+        }
+
+        function formatTRY(val) {
+            return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(val);
+        }
+
+        function OtomatikHesapla() {
+            let B2 = G("s1");
+            let B3 = G("s2");
+            document.getElementById("s3").value = (B2 * B3).toFixed(2).replace(".", ",");
+            document.getElementById("s11").value = (75 * B2).toFixed(2).replace(".", ",");
+        }
+
+        function HandleEnter(event) {
+            if (event.keyCode === 13 || event.key === "Enter") {
+                event.preventDefault();
+                let cId = event.target.id;
+                let nId = "";
+                
+                const sequence = [
+                    "s1", "s2", "s4", "s5", "s6", "s7", "s8", "s13", "s14", 
+                    "s9", "s10", "s12", "s12d", "asgari", "dv_muaf", "gv_muaf", 
+                    "s16", "s17", "s18", "s19", "s20", "v1"
+                ];
+
+                let index = sequence.indexOf(cId);
+                if (index !== -1 && index < sequence.length - 1) {
+                    nId = sequence[index + 1];
+                    document.getElementById(nId).focus();
+                } else if (cId === "v1" || index === sequence.length - 1) {
+                    HesaplaMaas();
+                    document.activeElement.blur(); 
+                }
+            }
+        }
+
+        function HesaplaMaas() {
+            try {
+                let B2 = G("s1"), B3 = G("s2"), B4 = B2 * B3;
+                let C5 = G("s4") * B2 * 2;
+                let C6 = G("s5") * B2 * 2;
+                let C7 = G("s6") * B2 * 2.25;
+                let C8 = G("s7") * G("gz_oran");
+                let C9 = G("s8");
+                let B10 = G("s9"), B11 = 75 * B2, B12 = G("s10"), B13 = G("s12");
+                let B16 = 0, B16_2 = G("s16"), B17 = G("s17"), B18 = G("s18"), B20 = G("s19"), B22 = G("s20");
+                let DV_M = G("dv_muaf"), GV_M = G("gv_muaf");
+                let B26 = B4 + C5 + C6 + C7 + C8 + C9 + B10 + B11 + B12 + B13 + B16 + B16_2 + B17 + B18 + B20 + B22;
+                let B27 = B26 - B10 - B13 - B16;
+                let B30 = Math.round(B27 * 0.14 * 100) / 100;
+                let B31 = Math.round(B27 * 0.01 * 100) / 100;
+                let B15 = G("s14");
+                let B29 = B27 - B30 - B31 - B15;
+                let v_oran = parseFloat(document.getElementById("v1").value) / 100;
+                let B33 = Math.round(((B29 * v_oran) - GV_M) * 100) / 100; if (B33 < 0) B33 = 0;
+                let B32 = Math.round(((B26 * 0.00759) - DV_M) * 100) / 100; if (B32 < 0) B32 = 0;
+                let B40 = B30 + B31 + B32 + B33;
+                let B14 = G("s13"), D13 = G("s12d"), B23 = 0;
+                let B41 = B15 + B14 + B23 + D13;
+                let B42 = B26 - B41 - B40;
+                let B43 = B42 + B14;
+                document.getElementById("res6").innerHTML = formatTRY(B42);
+                document.getElementById("resToplam").innerHTML = formatTRY(B43);
+                alert("Hesaplama Tamamlandı!");
+            } catch (e) { console.error(e); }
+        }
+
+        function sayfaAc(id) {
+            var sayfalar = ["ana-sayfa", "aylik-mesai-sayfa"];
+            for (var i = 0; i < sayfalar.length; i++) {
+                var s = document.getElementById(sayfalar[i]);
+                if(s) s.style.display = "none";
+            }
+            var hedef = document.getElementById(id);
+            if(hedef) hedef.style.display = "block";
+        }
+    </script>
+</head>
+<body>
+
+    <!-- 1. SAYFA: ANA SAYFA -->
+    <div id="ana-sayfa" class="sayfa aktif">
+        <h2 style="text-align:center;">MESAİ PROGRAMI</h2>
+        <button class="islem-btn" style="width:100%; padding:15px;" onclick="sayfaAc('aylik-mesai-sayfa')">AYLIK MESAİ VE MAAŞ HESAPLAMA</button>
+    </div>
+
+    <!-- 2. SAYFA: AYLIK MESAİ & MAAŞ HESAPLAMA SAYFASI -->
+    <div id="aylik-mesai-sayfa" class="sayfa">
+        
+        <!-- MESAİ / GÜNLER TABLOSU -->
+        <div style="background:#fff; padding:10px; border-radius:8px; border:2px solid #000;">
+            <h3 style="margin:0 0 10px 0; text-align:center;">AYIN GÜNLERİ - MESAİ LİSTESİ</h3>
+            <table border="1" width="100%" style="border-collapse:collapse; text-align:center;">
+                <thead>
+                    <tr style="background:#eee;">
+                        <th>Gün</th>
+                        <th>Vardiya</th>
+                        <th>Mesai Saat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Gündüz</td><td><input type="text" style="width:50px; text-align:center;"></td></tr>
+                    <tr><td>2</td><td>Gece</td><td><input type="text" style="width:50px; text-align:center;"></td></tr>
+                    <tr><td>3</td><td>Pazar</td><td><input type="text" style="width:50px; text-align:center;"></td></tr>
+                </tbody>
+            </table>
+
+            <!-- TOPLAM MESAİ KISMI -->
+            <div style="margin-top:10px; padding:8px; background:#e8f4fc; font-weight:bold; font-size:16px; border:1px solid #3498db; text-align:center;">
+                TOPLAM MESAİ: <span id="toplam_mesai_saat">0</span> Saat
+            </div>
+        </div>
+
+        <!-- TOPLAM MESAİ KISMININ HEMEN ALTINA EKLENEN MAAŞ HESAPLAMA OTOMASYONU -->
+        <div class="container-maas">
+            <div class="maas-baslik">MAAŞ HESAPLAMA OTOMASYONU</div>
+            <form action="javascript:void(0);">
+            <table class="maas-tbl">
+                <tbody>
+                    <tr><td class="lbl">Saat Ücreti:</td><td class="input-cell"><input type="text" inputmode="decimal" id="s1" onkeyup="OtomatikHesapla()" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Çalışma Saati:</td><td class="input-cell"><input type="text" inputmode="decimal" id="s2" onkeyup="OtomatikHesapla()" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Temel Brüt :</td><td class="input-cell"><input type="text" id="s3" class="readonly-input" readonly=""></td></tr>
+                    <tr><td class="lbl">İkramiye :</td><td class="input-cell"><input type="text" id="s11" class="readonly-input" readonly=""></td></tr>
+                    <tr><td colspan="2"><hr class="maas-hr"></td></tr>
+                    <tr><td class="lbl">Mesai Saati (x2):</td><td class="input-cell"><input type="text" inputmode="decimal" id="s4" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Vardiya Dön. Saati (x2):</td><td class="input-cell"><input type="text" inputmode="decimal" id="s5" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Bayram Mesai Saati (x2.25):</td><td class="input-cell"><input type="text" inputmode="decimal" id="s6" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr>
+                        <td class="lbl">
+                            <div class="gz-label-area">
+                                <span>Gece Zammı (x30.63):</span>
+                                <input type="text" inputmode="decimal" id="gz_oran" class="editable-param gz-small-box" value="30,63" onkeydown="HandleEnter(event)">
+                            </div>
+                        </td>
+                        <td class="input-cell"><input type="text" inputmode="decimal" id="s7" onkeydown="HandleEnter(event)"></td>
+                    </tr>
+                    <tr><td class="lbl">FM Gece Zammı (TL):</td><td class="input-cell"><input type="text" inputmode="decimal" id="s8" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Avans :</td><td class="input-cell"><input type="text" inputmode="decimal" id="s13" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Sendika Aidatı :</td><td class="input-cell"><input type="text" inputmode="decimal" id="s14" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td colspan="2"><hr class="maas-hr"></td></tr>
+                    <tr><td class="lbl">Çocuk Yardımı:</td><td class="input-cell"><input type="text" inputmode="decimal" id="s9" value="310,02" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Yakacak Yardımı:</td><td class="input-cell"><input type="text" inputmode="decimal" id="s10" value="3341,82" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Sağlık Sigortası :</td><td class="input-cell"><input type="text" inputmode="decimal" id="s12" value="1121,24" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Sağlık Sigortası (Özel):</td><td class="input-cell"><input type="text" inputmode="decimal" id="s12d" value="1112,73" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Asgari Ücret BRÜT:</td><td class="input-cell"><input type="text" inputmode="decimal" id="asgari" class="editable-param" value="33030,00" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">DV Muafiyeti:</td><td class="input-cell"><input type="text" inputmode="decimal" id="dv_muaf" class="editable-param" value="250,70" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">GV Muafiyeti:</td><td class="input-cell"><input type="text" inputmode="decimal" id="gv_muaf" class="editable-param" value="4211,33" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td colspan="2"><hr class="maas-hr"></td></tr>
+                    <tr><td class="lbl">Ayni Yardım 2:</td><td class="input-cell"><input type="text" inputmode="decimal" id="s16" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">İzin Parası:</td><td class="input-cell"><input type="text" inputmode="decimal" id="s17" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Alışveriş Çeki:</td><td class="input-cell"><input type="text" inputmode="decimal" id="s18" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Bayram Ücreti:</td><td class="input-cell"><input type="text" inputmode="decimal" id="s19" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Öğrenim Yardımı:</td><td class="input-cell"><input type="text" inputmode="decimal" id="s20" onkeydown="HandleEnter(event)"></td></tr>
+                    <tr><td class="lbl">Vergi Dilimi:</td><td class="input-cell">
+                        <select id="v1" onkeydown="HandleEnter(event)">
+                            <option value="15">%15</option>
+                            <option value="20" selected="">%20</option>
+                            <option value="27">%27</option>
+                        </select>
+                    </td></tr>
+                </tbody>
+            </table>
+            </form>
+            <button class="btn-maas" onclick="HesaplaMaas()">MAAŞI HESAPLA</button>
+            <div class="result-panel">
+                <div class="result-row"><span>TOPLAM MAAŞ (Net):</span><span id="res6" class="result-val">0,00 TL</span></div>
+                <div class="result-row"><span>AYIN 6'SI NET ÖDEME:</span><span id="resToplam" class="result-val">0,00 TL</span></div>
+            </div>
+            <div style="text-align: right; margin-top: 6px; font-size: 10px; font-weight: bold; color: #7f8c8d;">Hazırlayan: ErsNByhN</div>
+        </div>
+
+        <div style="text-align:center; margin-top:15px; margin-bottom:20px;">
+            <button class="islem-btn" onclick="sayfaAc('ana-sayfa')">&#11013; ANA SAYFAYA DÖN</button>
+        </div>
+    </div>
+
+</body>
+</html>
