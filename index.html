@@ -312,7 +312,7 @@
 </head>
 <body>
 
-  <!-- ÖZEL BİLDİRİM KUTUSU (TARAYICI ALERT YERİNE) -->
+  <!-- ÖZEL BİLDİRİM KUTUSU -->
   <div id="toast-message">Hesaplama Tamamlandı!</div>
 
   <!-- 1. SAYFA: 12 AY SEÇİM EKRANI -->
@@ -533,14 +533,26 @@
       }
     }
 
-    /* --- MAAŞ HESAPLAMA OTOMASYONU MANTIĞI --- */
+    /* --- DÜZELTİLMİŞ SAYI DÖNÜŞTÜRÜCÜ (G) --- */
     function G(id) {
       let el = document.getElementById(id);
       if (!el) return 0;
-      let val = el.value;
+      let val = el.value.toString().trim();
       if (val === "") return 0;
-      val = val.toString().replace(/\./g, "").replace(",", ".");
-      return isNaN(parseFloat(val)) ? 0 : parseFloat(val);
+      
+      // Eğer binlik ayracı nokta ve ondalık virgül ise (örn: 33.030,00)
+      if (val.indexOf(",") !== -1) {
+        val = val.replace(/\./g, "").replace(",", ".");
+      } else {
+        // Nokta varsa ve birden fazla nokta yoksa, doğrudan sayıya çevir
+        let parts = val.split(".");
+        if (parts.length > 2) {
+          val = val.replace(/\./g, "");
+        }
+      }
+      
+      let res = parseFloat(val);
+      return isNaN(res) ? 0 : res;
     }
 
     function formatTRY(val) {
@@ -555,13 +567,18 @@
       }, 2200);
     }
 
+    /* --- DÜZELTİLMİŞ OTOMATİK HESAPLA --- */
     function OtomatikHesapla() {
       let B2 = G("s1");
       let B3 = G("s2");
       let s3El = document.getElementById("s3");
       let s11El = document.getElementById("s11");
-      if (s3El) s3El.value = (B2 * B3).toFixed(2).replace(".", ",");
-      if (s11El) s11El.value = (75 * B2).toFixed(2).replace(".", ",");
+      
+      let temelBrut = B2 * B3;
+      let ikramiye = 75 * B2;
+
+      if (s3El) s3El.value = temelBrut.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (s11El) s11El.value = ikramiye.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function HandleEnter(event) {
@@ -598,6 +615,7 @@
         let B10 = G("s9"), B11 = 75 * B2, B12 = G("s10"), B13 = G("s12");
         let B16 = 0, B16_2 = G("s16"), B17 = G("s17"), B18 = G("s18"), B20 = G("s19"), B22 = G("s20");
         let DV_M = G("dv_muaf"), GV_M = G("gv_muaf");
+        
         let B26 = B4 + C5 + C6 + C7 + C8 + C9 + B10 + B11 + B12 + B13 + B16 + B16_2 + B17 + B18 + B20 + B22;
         let B27 = B26 - B10 - B13 - B16;
         let B30 = Math.round(B27 * 0.14 * 100) / 100;
@@ -612,10 +630,10 @@
         let B41 = B15 + B14 + B23 + D13;
         let B42 = B26 - B41 - B40;
         let B43 = B42 + B14;
+
         document.getElementById("res6").innerHTML = formatTRY(B42);
         document.getElementById("resToplam").innerHTML = formatTRY(B43);
         
-        // Alert yerine özel bildirim fonksiyonu çağrıldı
         showToast();
       } catch (e) { console.error(e); }
     }
